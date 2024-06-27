@@ -1,11 +1,8 @@
-# Project Title
+# Growtopia Clone With Unity Engine
 
-One Paragraph of project description goes here
+Growtopia Clone project with unity, with features like multiplayer, etc
 
-## Getting Started
+## ScreenShot
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
+![2024-06-27 23-54-27](https://github.com/dupitydumb/Growtopia-Clone-Unity/assets/37872714/3f01f62d-a1a5-4e33-bda5-38ccd2f648d0)
 
-### Prerequisites
-
-What things you need to install the software and how to install them
