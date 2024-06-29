@@ -16,28 +16,9 @@ public class Inventory : MonoBehaviour
     private GameObject parent;
     public BlockData selectedBlock;
 
-    public BlockData faceData;
-    public BlockData chestData;
-    public BlockData backData;
-    public BlockData hairData;
+    public EquipItem itemEquiped;
 
     public Action OnInventoryChange;
-    public BlockData GetWearableData(ItemWearType type)
-    {
-        switch (type)
-        {
-            case ItemWearType.Face:
-                return faceData;
-            case ItemWearType.Chest:
-                return chestData;
-            case ItemWearType.Back:
-                return backData;
-            case ItemWearType.Hair:
-                return hairData;
-            default:
-                return null;
-        }
-    }
         
     // Start is called before the first frame update
     void Start()

@@ -101,29 +101,27 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler
     private void WearItem()
     {
 
-        switch (blockData.itemWearType)
+        if (blockData.itemType == ItemType.Wearable)
         {
-            case ItemWearType.none:
-                inventory.selectedBlock = blockData;
-                inventory.OnInventoryChange?.Invoke();
-                break;
-            case ItemWearType.Face:
-                inventory.faceData = blockData;
-                inventory.OnInventoryChange?.Invoke();
-                break;
-            case ItemWearType.Chest:
-                inventory.chestData = blockData;
-                inventory.OnInventoryChange?.Invoke();
-                break;
-            case ItemWearType.Back:
-                inventory.backData = blockData;
-                inventory.OnInventoryChange?.Invoke();
-                break;
-            case ItemWearType.Hair:
-                inventory.hairData = blockData;
-                inventory.OnInventoryChange?.Invoke();
-                break;
+            switch (blockData.itemWearType)
+            {
+                case ItemWearType.Face:
+                    inventory.itemEquiped.faceData = blockData;
+                    break;
+                case ItemWearType.Chest:
+                    inventory.itemEquiped.chestData = blockData;
+                    break;
+                case ItemWearType.Back:
+                    inventory.itemEquiped.backData = blockData;
+                    break;
+                case ItemWearType.Hair:
+                    inventory.itemEquiped.hairData = blockData;
+                    break;  
+            }
         }
+        inventory.OnInventoryChange?.Invoke();
     }
+        
+    
         
 }

@@ -9,6 +9,8 @@ using TMPro;
 
 public class Playbox : NetworkBehaviour
 {
+    [SyncVar(hook = nameof(OnPlayerNameChanged))]
+    public string playerName;
     public TMP_Text playerNameText;
     public static Playbox LocalPlayerInstance;
     public GameObject playerArm;
@@ -28,13 +30,11 @@ public class Playbox : NetworkBehaviour
 
     [Header("Player Parts")]
     public GameObject face;
-    public BlockData faceData;
     public GameObject chest;
-    public BlockData chestData;
     public GameObject back;
-    public BlockData backData;
     public GameObject hair;
-    public BlockData hairData;
+    [SyncVar(hook = nameof(OnPlayerPartsChanged))]
+    public EquipItem playerParts;
     private void Awake()
     {
         if (isLocalPlayer)
@@ -42,6 +42,17 @@ public class Playbox : NetworkBehaviour
             LocalPlayerInstance = this;
         }
         
+    }
+
+    void OnPlayerNameChanged(string oldName, string newName)
+    {
+        playerNameText.text = newName;
+    }
+
+    [Command]
+    public void CmdSetPlayerName(string name)
+    {
+        playerName = name;
     }
 
     void Start()
@@ -62,37 +73,114 @@ public class Playbox : NetworkBehaviour
             gameObject.tag = "LocalPlayer";
         }
 
-        //set the player name text to their own network instance name
+        //set the player name text to username
+        CmdSetPlayerName(PlayerPrefs.GetString("username"));
         
 
         //Apply the player parts
         ApplyPlayerParts();
-        inventory.OnInventoryChange += ApplyPlayerParts;
+        inventory.OnInventoryChange += InventoryChanged;
     }
     [Command]
     public void CmdSendMessage(string message)
     {
         LogUI.instance.RpcDisplayMessage(message);
     }
-    
-    public void ApplyPlayerParts()
+
+
+    void InventoryChanged()
     {
-        //Stop the coroutine if it's already running
-        StopAllCoroutines();
-
-        faceData = inventory.GetWearableData(ItemWearType.Face);
-        chestData = inventory.GetWearableData(ItemWearType.Chest);
-        backData = inventory.GetWearableData(ItemWearType.Back);
-        hairData = inventory.GetWearableData(ItemWearType.Hair);
-
-        LogUI.instance.AddLog("Face Data: " + faceData);
-        LogUI.instance.AddLog("Chest Data: " + chestData);
-        LogUI.instance.AddLog("Back Data: " + backData);
-        LogUI.instance.AddLog("Hair Data: " + hairData);
-        // Face
-        if (faceData != null && faceData.itemSprites != null && faceData.itemSprites.Length > 0)
+        var item = inventory.itemEquiped;
+        if (item.faceData != null)
         {
-            StartCoroutine(AnimateItem(face, faceData.itemSprites, 0.5f));
+            EquipPart(item.faceData.blockName);
+        }
+        if (item.chestData != null)
+        {
+            EquipPart(item.chestData.blockName);
+        }
+        if (item.backData != null)
+        {
+            EquipPart(item.backData.blockName);
+        }
+        if (item.hairData != null)
+        {
+            EquipPart(item.hairData.blockName);
+        }
+    }   
+    [Command]
+    public void EquipPart(string blockName)
+    {
+        BlockData blockData = Resources.Load<BlockData>("Cosmetic/" + blockName);
+        if (blockData == null)
+        {
+            Debug.LogError("Block data not found for block name: " + blockName);
+            return;
+        }
+        // Update the part on the server
+        UpdatePlayerPart(blockData);
+
+        // Notify all clients to update this part
+        RpcUpdatePlayerPart(blockData.blockName, blockData.itemWearType);
+    }
+
+    [ClientRpc]
+    public void RpcUpdatePlayerPart(string blockName, ItemWearType wearType)
+    {
+        // This method will run on all clients
+        // Ensure you apply the part change here, similar to how it's done in EquipPart
+        BlockData blockData = Resources.Load<BlockData>("Cosmetic/" + blockName);
+        switch (wearType)
+        {
+            case ItemWearType.Face:
+                playerParts.faceData = blockData;
+                break;
+            case ItemWearType.Chest:
+                playerParts.chestData = blockData;
+                break;
+            case ItemWearType.Back:
+                playerParts.backData = blockData;
+                break;
+            case ItemWearType.Hair:
+                playerParts.hairData = blockData;
+                break;
+        }
+        ApplyPlayerParts(); // Assuming this method applies the changes visually
+    }
+    private void UpdatePlayerPart(BlockData blockData)
+    {
+        // This method updates the part on the server
+        switch (blockData.itemWearType)
+        {
+            case ItemWearType.Face:
+                playerParts.faceData = blockData;
+                break;
+            case ItemWearType.Chest:
+                playerParts.chestData = blockData;
+                break;
+            case ItemWearType.Back:
+                playerParts.backData = blockData;
+                break;
+            case ItemWearType.Hair:
+                playerParts.hairData = blockData;
+                break;
+        }
+    }
+
+    void OnPlayerPartsChanged(EquipItem oldParts, EquipItem newParts)
+    {
+        ApplyPlayerParts();
+    }
+
+    [ClientRpc]
+    void ApplyPlayerParts()
+    {
+
+        StopAllCoroutines(); // Stop all running coroutines before starting new ones
+        Debug.Log("Applying player parts");
+        if (playerParts.faceData != null && playerParts.faceData.itemSprites != null && playerParts.faceData.itemSprites.Length > 0)
+        {
+            StartCoroutine(AnimateItem(face, playerParts.faceData.itemSprites, 0.5f));
             face.SetActive(true);
         }
         else
@@ -101,9 +189,9 @@ public class Playbox : NetworkBehaviour
         }
 
         // Chest
-        if (chestData != null && chestData.itemSprites != null && chestData.itemSprites.Length > 0)
+        if (playerParts.chestData != null && playerParts.chestData.itemSprites != null && playerParts.chestData.itemSprites.Length > 0)
         {
-            StartCoroutine(AnimateItem(chest, chestData.itemSprites, 0.5f));
+            StartCoroutine(AnimateItem(chest, playerParts.chestData.itemSprites, 0.5f));
             chest.SetActive(true);
         }
         else
@@ -112,9 +200,9 @@ public class Playbox : NetworkBehaviour
         }
 
         // Back
-        if (backData != null && backData.itemSprites != null && backData.itemSprites.Length > 0)
+        if (playerParts.backData != null && playerParts.backData.itemSprites != null && playerParts.backData.itemSprites.Length > 0)
         {
-            StartCoroutine(AnimateItem(back, backData.itemSprites, 0.5f));
+            StartCoroutine(AnimateItem(back, playerParts.backData.itemSprites, 0.5f));
             back.SetActive(true);
         }
         else
@@ -124,15 +212,16 @@ public class Playbox : NetworkBehaviour
 
         // Hair
 
-        if (hairData != null && hairData.itemSprites != null && hairData.itemSprites.Length > 0)
+        if (playerParts.hairData != null && playerParts.hairData.itemSprites != null && playerParts.hairData.itemSprites.Length > 0)
         {
-            StartCoroutine(AnimateItem(hair, hairData.itemSprites, 0.5f));
+            StartCoroutine(AnimateItem(hair, playerParts.hairData.itemSprites, 0.5f));
             hair.SetActive(true);
         }
         else
         {
             hair.SetActive(false); // Disable the GameObject if the data is empty or null
         }
+        
     }
 
     // Coroutine to animate item sprites
@@ -308,6 +397,19 @@ public class Playbox : NetworkBehaviour
         // Apply the stretch factor to the Y-axis scale of the arm
         playerArm.transform.localScale = new Vector3(playerArm.transform.localScale.x, stretchFactor, playerArm.transform.localScale.z);
     }
+}
+
+[System.Serializable]
+public class EquipItem
+{
+    public BlockData faceData;
+    
+    public BlockData chestData;
+    
+    public BlockData backData;
+    
+    public BlockData hairData;
+
 }
 
 

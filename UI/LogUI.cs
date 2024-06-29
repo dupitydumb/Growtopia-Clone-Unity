@@ -54,7 +54,7 @@ public class LogUI : NetworkBehaviour
 
     public void SendMessage()
     {
-        string playerId = PlayerPrefs.GetString("playerId", "Player");
+        string playerId = PlayerPrefs.GetString("username");
         string message = messageInput.text;
 
 
