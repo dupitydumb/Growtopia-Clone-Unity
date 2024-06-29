@@ -43,10 +43,13 @@ public class LogUI : NetworkBehaviour
 
     public void AddLog(string log)
     {
+        Debug.Log("Adding log: " + log);
         GameObject text = Instantiate(textPrefab, parent.transform);
         text.transform.localPosition = Vector3.zero; // Set local position relative to parent
-        text.transform.localScale = Vector3.one; // Ensure the text scales correctly
-        text.GetComponent<TextMeshProUGUI>().text = $"<color=#{ColorUtility.ToHtmlStringRGBA(SystemLogColor)}>[System] </color>: {log}";
+        text.transform.localScale = Vector3.one; // Ensure the text scales correctly   
+        string limitString = log.Length > 60 ? log.Substring(0, 60) : log;
+        text.GetComponent<TextMeshProUGUI>().text = $"<color=#{ColorUtility.ToHtmlStringRGBA(SystemLogColor)}>[System] </color>: {limitString}";
+        Debug.Log("Added log: " + text.name);
     }
 
     public void SendMessage()

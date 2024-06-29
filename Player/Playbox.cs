@@ -62,8 +62,8 @@ public class Playbox : NetworkBehaviour
             gameObject.tag = "LocalPlayer";
         }
 
-        //set the player name text to playerpref
-        playerNameText.text = PlayerPrefs.GetString("playerName");
+        //set the player name text to their own network instance name
+        
 
         //Apply the player parts
         ApplyPlayerParts();
